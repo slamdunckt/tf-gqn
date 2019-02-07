@@ -17,9 +17,9 @@ GQN_DEFAULT_PARAM_DICT = {
     'IMG_CHANNELS' : 3,
     'POSE_CHANNELS' : 7,
     # input parameters
-    'CONTEXT_SIZE' : 5,
+    'CONTEXT_SIZE' : 15,
     # hyper-parameters: scene representation
-    'ENC_TYPE' : 'pool',  # encoding architecture used: pool | tower
+    'ENC_TYPE' : 'tower',  # encoding architecture used: pool | tower
     'ENC_HEIGHT' : 16,
     'ENC_WIDTH' : 16,
     'ENC_CHANNELS' : 256,

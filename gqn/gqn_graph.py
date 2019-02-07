@@ -44,23 +44,52 @@ def _pack_context(context_poses, context_frames, model_params):
   return context_poses_packed, context_frames_packed
 
 
-def _reduce_packed_representation(enc_r_packed, model_params):
+def _attention_unpacked_representation(enc_r_extracted, model_params,query_pose):
+  _CONTEXT_SIZE = model_params.CONTEXT_SIZE
+
+  query_pose_reshape = tf.reshape(
+    query_pose, shape=[-1,1,1,1,7])
+  query_pose_dense = tf.layers.dense(query_pose_reshape,units=64,activation=tf.nn.relu,name='pose_dense1')
+  query_pose_dense = tf.layers.dense(query_pose_dense,units=256,activation=tf.nn.relu,name='pose_dense2')
+  query_pose_dup = tf.tile(
+    query_pose_dense, [1,_CONTEXT_SIZE,1,1,1])
+  
+  enc_r_combine = tf.matmul(enc_r_extracted,query_pose_dup,transpose_b=True)
+  attention_softmax = tf.nn.softmax(enc_r_combine,axis=1)
+  #enc_r_combine = tf.concat((enc_r_extracted,query_pose_dup),axis=-1)
+  #dense1 = tf.layers.dense(enc_r_combine, units=64, activation=tf.nn.relu, name='attn_dense1')
+  #dense2 = tf.layers.dense(dense1, units=8, activation=tf.nn.relu, name='attn_dense2')
+  #dense3 = tf.layers.dense(dense2, units=1, name='attn_dense3')
+  #attention_softmax = tf.nn.softmax(dense3,axis=1)
+  return attention_softmax
+
+def _reduce_packed_representation(enc_r_packed, model_params,query_pose):
   # shorthand notations for model parameters
   _CONTEXT_SIZE = model_params.CONTEXT_SIZE
   _DIM_C_ENC = model_params.ENC_CHANNELS
+  _ENC_TYPE = model_params.ENC_TYPE
 
   height, width = tf.shape(enc_r_packed)[1], tf.shape(enc_r_packed)[2]
 
   enc_r_unpacked = tf.reshape(
       enc_r_packed, shape=[-1, _CONTEXT_SIZE, height, width, _DIM_C_ENC])
 
-  # add scene representations per data tuple
-  enc_r = tf.reduce_sum(enc_r_unpacked, axis=1)
+  #apply attention
+  if _ENC_TYPE == 'tower':
+    enc_r_pooling = tf.layers.average_pooling2d(enc_r_packed, 16, 1, name='pooling')
+    enc_r_extracted = tf.reshape(
+      enc_r_pooling, shape=[-1,_CONTEXT_SIZE,1,1,_DIM_C_ENC])
+  elif _ENC_TYPE == 'pool':
+    enc_r_extracted = enc_r_unpacked
+  enc_attention = _attention_unpacked_representation(enc_r_extracted, model_params,query_pose)
+
+  # add scene representations per data tuple with attention
+  enc_r = tf.reduce_sum(enc_attention*enc_r_unpacked, axis=1)
 
   return enc_r
 
 
-def _encode_context(encoder_fn, context_poses, context_frames, model_params):
+def _encode_context(encoder_fn, context_poses, context_frames, model_params,query_pose):
   endpoints = {}
 
   context_poses_packed, context_frames_packed = _pack_context(
@@ -72,7 +101,7 @@ def _encode_context(encoder_fn, context_poses, context_frames, model_params):
   endpoints.update(endpoints_psi)
 
   # unpack scene encoding and reduce to single vector
-  enc_r = _reduce_packed_representation(enc_r_packed, model_params)
+  enc_r = _reduce_packed_representation(enc_r_packed, model_params,query_pose)
   endpoints["enc_r"] = enc_r
 
   return enc_r, endpoints
@@ -115,7 +144,7 @@ def gqn_draw(
     endpoints = {}
 
     enc_r, endpoints_enc = _encode_context(
-        _ENC_FUNCTIONS[_ENC_TYPE], context_poses, context_frames, model_params)
+        _ENC_FUNCTIONS[_ENC_TYPE], context_poses, context_frames, model_params,query_pose)
     endpoints.update(endpoints_enc)
 
     # broadcast scene representation to 1/4 of targeted frame size
@@ -169,7 +198,7 @@ def gqn_vae(
     endpoints = {}
 
     enc_r, endpoints_enc = _encode_context(
-        tower_encoder, context_poses, context_frames, model_params)
+        tower_encoder, context_poses, context_frames, model_params,query_pose)
     endpoints.update(endpoints_enc)
 
     mu_z, sigma_z, z = compute_eta_and_sample_z(

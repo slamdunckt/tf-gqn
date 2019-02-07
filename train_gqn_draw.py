@@ -133,6 +133,7 @@ def main(unparsed_argv):
         batch_size=FLAGS.batch_size,
         num_threads=FLAGS.queue_threads,
         buffer_size=FLAGS.queue_buffer,
+        custom_frame_size=64
     )
     eval_results = classifier.evaluate(
         input_fn=eval_input,
@@ -151,6 +152,7 @@ def main(unparsed_argv):
         batch_size=FLAGS.batch_size,
         num_threads=FLAGS.queue_threads,
         buffer_size=FLAGS.queue_buffer,
+        custom_frame_size=64
     )
     classifier.train(
         input_fn=train_input,
@@ -166,6 +168,7 @@ def main(unparsed_argv):
         batch_size=FLAGS.batch_size,
         num_threads=FLAGS.queue_threads,
         buffer_size=FLAGS.queue_buffer,
+        custom_frame_size=64
     )
     eval_results = classifier.evaluate(
         input_fn=eval_input,
