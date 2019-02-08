@@ -23,6 +23,8 @@ GQN_DEFAULT_PARAM_DICT = {
     'ENC_HEIGHT' : 16,
     'ENC_WIDTH' : 16,
     'ENC_CHANNELS' : 256,
+    # use attention algorithm between context images
+    'USE_ATTENTION' : True,
     # hyper-parameters: generator LSTM
     'LSTM_OUTPUT_CHANNELS' : 256,
     'LSTM_CANVAS_CHANNELS' : 256,

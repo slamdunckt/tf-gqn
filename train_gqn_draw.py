@@ -37,6 +37,12 @@ ARGPARSER.add_argument(
 ARGPARSER.add_argument(
     '--seq_length', type=int, default=8,
     help='The number of generation steps of the DRAW LSTM.')
+ARGPARSER.add_argument(
+    '--resize', default=False, action='store_true',
+    help='Enable to resize image to (custom frame size) * (custom frame size).')
+ARGPARSER.add_argument(
+    '--custom_frame_size', type=int, default=64,
+    help='The custom frame size to resize images. less than original frame size')
 # solver parameters
 ARGPARSER.add_argument(
     '--adam_lr_alpha', type=float, default=5*10e-5,
@@ -125,16 +131,27 @@ def main(unparsed_argv):
 
   # optional initial evaluation
   if FLAGS.initial_eval:
-    eval_input = lambda: gqn_input_fn(
-        dataset=FLAGS.dataset,
-        context_size=gqn_config.CONTEXT_SIZE,
-        root=FLAGS.data_dir,
-        mode=tf.estimator.ModeKeys.EVAL,
-        batch_size=FLAGS.batch_size,
-        num_threads=FLAGS.queue_threads,
-        buffer_size=FLAGS.queue_buffer,
-        custom_frame_size=64
-    )
+    if FLAGS.resize:
+      eval_input = lambda: gqn_input_fn(
+          dataset=FLAGS.dataset,
+          context_size=gqn_config.CONTEXT_SIZE,
+          root=FLAGS.data_dir,
+          mode=tf.estimator.ModeKeys.EVAL,
+          batch_size=FLAGS.batch_size,
+          num_threads=FLAGS.queue_threads,
+          buffer_size=FLAGS.queue_buffer,
+          custom_frame_size=FLAGS.custom_frame_size
+      )
+    else:
+      eval_input = lambda: gqn_input_fn(
+          dataset=FLAGS.dataset,
+          context_size=gqn_config.CONTEXT_SIZE,
+          root=FLAGS.data_dir,
+          mode=tf.estimator.ModeKeys.EVAL,
+          batch_size=FLAGS.batch_size,
+          num_threads=FLAGS.queue_threads,
+          buffer_size=FLAGS.queue_buffer,
+      )
     eval_results = classifier.evaluate(
         input_fn=eval_input,
         hooks=[logging_hook],
@@ -144,32 +161,55 @@ def main(unparsed_argv):
   for _ in range(FLAGS.train_epochs):
 
     # train the model for one epoch
-    train_input = lambda: gqn_input_fn(
-        dataset=FLAGS.dataset,
-        context_size=gqn_config.CONTEXT_SIZE,
-        root=FLAGS.data_dir,
-        mode=tf.estimator.ModeKeys.TRAIN,
-        batch_size=FLAGS.batch_size,
-        num_threads=FLAGS.queue_threads,
-        buffer_size=FLAGS.queue_buffer,
-        custom_frame_size=64
-    )
+    if FLAGS.resize:
+      train_input = lambda: gqn_input_fn(
+          dataset=FLAGS.dataset,
+          context_size=gqn_config.CONTEXT_SIZE,
+          root=FLAGS.data_dir,
+          mode=tf.estimator.ModeKeys.TRAIN,
+          batch_size=FLAGS.batch_size,
+          num_threads=FLAGS.queue_threads,
+          buffer_size=FLAGS.queue_buffer,
+          custom_frame_size=FLAGS.custom_frame_size
+      )
+    else:
+      train_input = lambda: gqn_input_fn(
+          dataset=FLAGS.dataset,
+          context_size=gqn_config.CONTEXT_SIZE,
+          root=FLAGS.data_dir,
+          mode=tf.estimator.ModeKeys.TRAIN,
+          batch_size=FLAGS.batch_size,
+          num_threads=FLAGS.queue_threads,
+          buffer_size=FLAGS.queue_buffer,
+      )
+
     classifier.train(
         input_fn=train_input,
         hooks=[logging_hook],
     )
 
     # evaluate the model on the validation set
-    eval_input = lambda: gqn_input_fn(
-        dataset=FLAGS.dataset,
-        context_size=gqn_config.CONTEXT_SIZE,
-        root=FLAGS.data_dir,
-        mode=tf.estimator.ModeKeys.EVAL,
-        batch_size=FLAGS.batch_size,
-        num_threads=FLAGS.queue_threads,
-        buffer_size=FLAGS.queue_buffer,
-        custom_frame_size=64
-    )
+    if FLAGS.resize:
+      eval_input = lambda: gqn_input_fn(
+          dataset=FLAGS.dataset,
+          context_size=gqn_config.CONTEXT_SIZE,
+          root=FLAGS.data_dir,
+          mode=tf.estimator.ModeKeys.EVAL,
+          batch_size=FLAGS.batch_size,
+          num_threads=FLAGS.queue_threads,
+          buffer_size=FLAGS.queue_buffer,
+          custom_frame_size=FLAGS.custom_frame_size
+      )
+    else:
+      eval_input = lambda: gqn_input_fn(
+          dataset=FLAGS.dataset,
+          context_size=gqn_config.CONTEXT_SIZE,
+          root=FLAGS.data_dir,
+          mode=tf.estimator.ModeKeys.EVAL,
+          batch_size=FLAGS.batch_size,
+          num_threads=FLAGS.queue_threads,
+          buffer_size=FLAGS.queue_buffer,
+      )
     eval_results = classifier.evaluate(
         input_fn=eval_input,
         hooks=[logging_hook],

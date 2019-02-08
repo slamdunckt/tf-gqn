@@ -47,6 +47,8 @@ def _pack_context(context_poses, context_frames, model_params):
 def _attention_unpacked_representation(enc_r_extracted, model_params,query_pose):
   _CONTEXT_SIZE = model_params.CONTEXT_SIZE
 
+  # Extract feature from query pose
+  # [BATCH_SIZE, 1, 1, 1, 7] -> [BATCH_SIZE, CONTEXT_SIZE, 1, 1, 256]
   query_pose_reshape = tf.reshape(
     query_pose, shape=[-1,1,1,1,7])
   query_pose_dense = tf.layers.dense(query_pose_reshape,units=64,activation=tf.nn.relu,name='pose_dense1')
@@ -54,13 +56,9 @@ def _attention_unpacked_representation(enc_r_extracted, model_params,query_pose)
   query_pose_dup = tf.tile(
     query_pose_dense, [1,_CONTEXT_SIZE,1,1,1])
   
+  # Dot product of context features and query pose features (apply attention)
   enc_r_combine = tf.matmul(enc_r_extracted,query_pose_dup,transpose_b=True)
   attention_softmax = tf.nn.softmax(enc_r_combine,axis=1)
-  #enc_r_combine = tf.concat((enc_r_extracted,query_pose_dup),axis=-1)
-  #dense1 = tf.layers.dense(enc_r_combine, units=64, activation=tf.nn.relu, name='attn_dense1')
-  #dense2 = tf.layers.dense(dense1, units=8, activation=tf.nn.relu, name='attn_dense2')
-  #dense3 = tf.layers.dense(dense2, units=1, name='attn_dense3')
-  #attention_softmax = tf.nn.softmax(dense3,axis=1)
   return attention_softmax
 
 def _reduce_packed_representation(enc_r_packed, model_params,query_pose):
@@ -68,23 +66,28 @@ def _reduce_packed_representation(enc_r_packed, model_params,query_pose):
   _CONTEXT_SIZE = model_params.CONTEXT_SIZE
   _DIM_C_ENC = model_params.ENC_CHANNELS
   _ENC_TYPE = model_params.ENC_TYPE
+  _USE_ATTENTION = model_params.USE_ATTENTION
 
   height, width = tf.shape(enc_r_packed)[1], tf.shape(enc_r_packed)[2]
 
   enc_r_unpacked = tf.reshape(
       enc_r_packed, shape=[-1, _CONTEXT_SIZE, height, width, _DIM_C_ENC])
 
-  #apply attention
-  if _ENC_TYPE == 'tower':
-    enc_r_pooling = tf.layers.average_pooling2d(enc_r_packed, 16, 1, name='pooling')
-    enc_r_extracted = tf.reshape(
-      enc_r_pooling, shape=[-1,_CONTEXT_SIZE,1,1,_DIM_C_ENC])
-  elif _ENC_TYPE == 'pool':
-    enc_r_extracted = enc_r_unpacked
-  enc_attention = _attention_unpacked_representation(enc_r_extracted, model_params,query_pose)
+  # USE_ATTENTION == TRUE : use attention, compute biases from 'pooled' feature and query pose
+  # USE_ATTENTION == FALSE : simply summation of context features
+  if _USE_ATTENTION:
+    if _ENC_TYPE == 'tower':
+      enc_r_pooling = tf.layers.average_pooling2d(enc_r_packed, 16, 1, name='pooling')
+      enc_r_extracted = tf.reshape(
+        enc_r_pooling, shape=[-1,_CONTEXT_SIZE,1,1,_DIM_C_ENC])
+    elif _ENC_TYPE == 'pool':
+      enc_r_extracted = enc_r_unpacked
+    enc_attention = _attention_unpacked_representation(enc_r_extracted, model_params,query_pose)
 
-  # add scene representations per data tuple with attention
-  enc_r = tf.reduce_sum(enc_attention*enc_r_unpacked, axis=1)
+    # add scene representations per data tuple with attention
+    enc_r = tf.reduce_sum(enc_attention*enc_r_unpacked, axis=1)
+  else:
+    enc_r = tf.reduce_sum(enc_r_unpacked, axis=1)
 
   return enc_r
 
