@@ -46,13 +46,17 @@ def _pack_context(context_poses, context_frames, model_params):
 
 def _attention_unpacked_representation(enc_r_extracted, model_params,query_pose):
   _CONTEXT_SIZE = model_params.CONTEXT_SIZE
+  _POSE_CHANNELS = model_params.POSE_CHANNELS
+  _ENC_CHANNELS = model_params.ENC_CHANNELS
 
   # Extract feature from query pose
-  # [BATCH_SIZE, 1, 1, 1, 7] -> [BATCH_SIZE, CONTEXT_SIZE, 1, 1, 256]
+  # [BATCH_SIZE, 1, 1, 1, POSE_CHANNELS] -> [BATCH_SIZE, CONTEXT_SIZE, 1, 1, ENC_CHANNELS]
   query_pose_reshape = tf.reshape(
-    query_pose, shape=[-1,1,1,1,7])
-  query_pose_dense = tf.layers.dense(query_pose_reshape,units=64,activation=tf.nn.relu,name='pose_dense1')
-  query_pose_dense = tf.layers.dense(query_pose_dense,units=256,activation=tf.nn.relu,name='pose_dense2')
+    query_pose, shape=[-1,1,1,1,_POSE_CHANNELS])
+  query_pose_dense = tf.layers.dense(query_pose_reshape,units=64,
+    activation=tf.nn.relu,name='pose_dense1')
+  query_pose_dense = tf.layers.dense(query_pose_dense,units=_ENC_CHANNELS,
+    activation=tf.nn.relu,name='pose_dense2')
   query_pose_dup = tf.tile(
     query_pose_dense, [1,_CONTEXT_SIZE,1,1,1])
   
@@ -64,9 +68,11 @@ def _attention_unpacked_representation(enc_r_extracted, model_params,query_pose)
 def _reduce_packed_representation(enc_r_packed, model_params,query_pose):
   # shorthand notations for model parameters
   _CONTEXT_SIZE = model_params.CONTEXT_SIZE
+  _USE_ATTENTION = model_params.USE_ATTENTION
   _DIM_C_ENC = model_params.ENC_CHANNELS
   _ENC_TYPE = model_params.ENC_TYPE
-  _USE_ATTENTION = model_params.USE_ATTENTION
+  _ENC_HEIGHT = model_params.ENC_HEIGHT
+  _ENC_WIDTH = model_params.ENC_WIDTH
 
   height, width = tf.shape(enc_r_packed)[1], tf.shape(enc_r_packed)[2]
 
@@ -77,7 +83,7 @@ def _reduce_packed_representation(enc_r_packed, model_params,query_pose):
   # USE_ATTENTION == FALSE : simply summation of context features
   if _USE_ATTENTION:
     if _ENC_TYPE == 'tower':
-      enc_r_pooling = tf.layers.average_pooling2d(enc_r_packed, 16, 1, name='pooling')
+      enc_r_pooling = tf.layers.average_pooling2d(enc_r_packed, (_ENC_HEIGHT,_ENC_WIDTH), 1, name='pooling')
       enc_r_extracted = tf.reshape(
         enc_r_pooling, shape=[-1,_CONTEXT_SIZE,1,1,_DIM_C_ENC])
     elif _ENC_TYPE == 'pool':
