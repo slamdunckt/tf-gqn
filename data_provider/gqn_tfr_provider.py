@@ -1,20 +1,3 @@
-# Copyright 2018 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# Changes made by ogroth, stefan.
-
-"""Minimal data reader for GQN TFRecord datasets."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -41,6 +24,14 @@ _DATASETS = dict(
         test_size=400,
         frame_size=64,
         sequence_size=11),
+
+    minecraft=DatasetInfo(
+        basepath='minecraft',
+        train_size=8000,
+        test_size=2000,
+        frame_size=128,
+        sequence_size=150),
+
 
     mazes=DatasetInfo(
         basepath='mazes',
@@ -121,7 +112,6 @@ def _convert_frame_data(jpeg_data):
 
 class DataReader(object):
   """Minimal queue based TFRecord reader.
-
   You can use this reader to load the datasets used to train Generative Query
   Networks (GQNs) in the 'Neural Scene Representation and Rendering' paper.
   See README.md for a description of the datasets and an example of how to use
@@ -141,7 +131,6 @@ class DataReader(object):
                min_after_dequeue=128,
                seed=None):
     """Instantiates a DataReader object and sets up queues for data reading.
-
     Args:
       dataset: string, one of ['jaco', 'mazes', 'rooms_ring_camera',
           'rooms_free_camera_no_object_rotations',
@@ -160,7 +149,6 @@ class DataReader(object):
           RandomShuffleQueue, defualts to 128.
       seed: (optional) integer, seed for the random number generators used in
           the reader.
-
     Raises:
       ValueError: if the required version does not exist; if the required mode
          is not supported; if the requested context_size is bigger than the
@@ -281,7 +269,6 @@ class DataReader(object):
 
 class GQNTFRecordDataset(tf.data.Dataset):
   """Minimal tf.data.Dataset based TFRecord dataset.
-
   You can use this class to load the datasets used to train Generative Query
   Networks (GQNs) in the 'Neural Scene Representation and Rendering' paper.
   See README.md for a description of the datasets and an example of how to use
@@ -292,7 +279,6 @@ class GQNTFRecordDataset(tf.data.Dataset):
                custom_frame_size=None, num_threads=4, buffer_size=256,
                parse_batch_size=32):
     """Instantiates a DataReader object and sets up queues for data reading.
-
     Args:
       dataset: string, one of ['jaco', 'mazes', 'rooms_ring_camera',
           'rooms_free_camera_no_object_rotations',
@@ -309,7 +295,6 @@ class GQNTFRecordDataset(tf.data.Dataset):
           records are read, defualts to 256.
       parse_batch_size: (optional) integer, number of records to parse at the
           same time, defaults to 32.
-
     Raises:
       ValueError: if the required version does not exist; if the required mode
          is not supported; if the requested context_size is bigger than the
@@ -462,7 +447,6 @@ def gqn_input_fn(
           shuffle buffer, defaults to 256.
       seed: (optional) integer, seed for the random number generators used in
           the dataset.
-
     Raises:
       ValueError: if the required version does not exist; if the required mode
          is not supported; if the requested context_size is bigger than the

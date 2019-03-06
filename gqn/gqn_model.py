@@ -22,6 +22,9 @@ from .gqn_objective import gqn_draw_elbo, gqn_vae_elbo
 from .gqn_params import GQNConfig, GQN_DEFAULT_PARAM_DICT
 from .gqn_utils import debug_canvas_image_mean
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 def _linear_noise_annealing(gqn_params: GQNConfig) -> tf.Tensor:
   """
@@ -281,6 +284,17 @@ def gqn_draw_identity_model_fn(features, labels, mode, params):
         generator_sequence,
         max_outputs=1
     )
+
+  with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    aaaa=target_sample.eval(session=sess)
+    #aaaa=mu_target.eval(session=sess)
+    #aaaa=target_frame.eval(session=sess)
+  for i, img in enumerate(aaaa):
+      #img = 1. / (1. + np.exp(-img))
+      print(img.min(), img.max())
+      plt.imsave('fig{}.png'.format(i), img)
+      break
 
   # predictions to make when deployed during test time
   if mode == tf.estimator.ModeKeys.PREDICT:

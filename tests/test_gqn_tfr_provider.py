@@ -10,17 +10,19 @@ sys.path.append(TF_GQN_HOME)
 
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
 
 from data_provider.gqn_tfr_provider import DataReader
 
 # TODO(ogroth): make CLI parameters!
-ROOT_PATH = '/tmp/data/gqn-dataset'
+#ROOT_PATH = '/tmp/data/gqn-dataset'
+ROOT_PATH = '/home/cylee/gqn/gqn-dataset'
 DATASET_NAME = 'rooms_ring_camera'
 CTX_SIZE = 5 # number of context (image, pose) pairs for a given query pose
 BATCH_SIZE = 36
 
 # graph definition
-data_reader = DataReader(dataset=DATASET_NAME, context_size=CTX_SIZE, root=ROOT_PATH)
+data_reader = DataReader(dataset=DATASET_NAME, context_size=CTX_SIZE,mode='test',  root=ROOT_PATH)
 data = data_reader.read(batch_size=BATCH_SIZE)
 
 # fetch one batch of data
@@ -32,5 +34,9 @@ with tf.train.SingularMonitoredSession() as sess:
   print("Target images: %s" % str(d.target.shape))
   print("Context camera poses: %s" % str(d.query.context.cameras.shape))
   print("Context frames: %s" % str(d.query.context.frames.shape))
+  for i, img in enumerate(d.target):
+      plt.imsave('fig_{}.png'.format(i), img)
+  for i, img in enumerate(d.query.context.frames[0]):
+      plt.imsave('ctx_{}.png'.format(i), img)
 
 print("TEST PASSED!")

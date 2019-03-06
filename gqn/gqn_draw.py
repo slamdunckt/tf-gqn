@@ -42,7 +42,7 @@ class GQNLSTMCell(tf.contrib.rnn.RNNCell):
                output_channels,
                kernel_size=5,
                use_bias=True,
-               forget_bias=1.0,
+               forget_bias=1.2,
                hidden_state_name="h",
                name="GQNCell"):
     """Construct ConvLSTMCell.
@@ -157,7 +157,7 @@ class GeneratorLSTMCell(tf.contrib.rnn.RNNCell):
                canvas_channels,
                kernel_size=5,
                use_bias=True,
-               forget_bias=1.0,
+               forget_bias=1.2,
                name="GeneratorLSTMCell"):
     """Construct ConvLSTMCell.
     Args:
@@ -242,7 +242,7 @@ class InferenceLSTMCell(tf.contrib.rnn.RNNCell):
                output_channels,
                kernel_size=5,
                use_bias=True,
-               forget_bias=1.0,
+               forget_bias=1.2,
                name="InferenceLSTMCell"):
     """Construct ConvLSTMCell.
     Args:

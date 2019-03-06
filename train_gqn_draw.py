@@ -11,7 +11,7 @@ import os
 import argparse
 import tensorflow as tf
 
-from gqn.gqn_model import gqn_draw_model_fn
+from gqn.gqn_model import gqn_draw_model_fn, gqn_draw_identity_model_fn
 from gqn.gqn_params import create_gqn_config
 from data_provider.gqn_tfr_provider import gqn_input_fn
 
@@ -21,7 +21,7 @@ ARGPARSER = argparse.ArgumentParser(
     description='Train a GQN as a tf.estimator.Estimator.')
 # directory parameters
 ARGPARSER.add_argument(
-    '--data_dir', type=str, default='/tmp/data/gqn-dataset',
+    '--data_dir', type=str, default='/home/cylee/gqn/data/gqn-dataset',
     help='The path to the gqn-dataset directory.')
 ARGPARSER.add_argument(
     '--dataset', type=str, default='rooms_ring_camera',
@@ -31,7 +31,7 @@ ARGPARSER.add_argument(
     rooms_free_camera_with_object_rotations | rooms_ring_camera | \
     shepard_metzler_5_parts | shepard_metzler_7_parts')
 ARGPARSER.add_argument(
-    '--model_dir', type=str, default='/tmp/models/gqn',
+    '--model_dir', type=str, default='/home/cylee/gqn/models/tf-gqn',
     help='The directory where the model will be stored.')
 # model parameters
 ARGPARSER.add_argument(
@@ -50,7 +50,7 @@ ARGPARSER.add_argument(
     help='The number of epochs to train.')
 # snapshot parameters
 ARGPARSER.add_argument(
-    '--chkpt_steps', type=int, default=10000,
+    '--chkpt_steps', type=int, default=1000,
     help='Number of steps between checkpoint saves.')
 # memory management
 ARGPARSER.add_argument(
@@ -96,6 +96,7 @@ def main(unparsed_argv):
   run_config = tf.estimator.RunConfig(
       session_config=sess_config,
       save_checkpoints_steps=FLAGS.chkpt_steps,
+      keep_checkpoint_max=30,
   )
   custom_params = {
       'SEQ_LENGTH' : FLAGS.seq_length,
@@ -109,6 +110,7 @@ def main(unparsed_argv):
   }
   classifier = tf.estimator.Estimator(
       model_fn=gqn_draw_model_fn,
+      #model_fn=gqn_draw_identity_model_fn,
       model_dir=FLAGS.model_dir,
       config=run_config,
       params=model_params,
@@ -128,6 +130,7 @@ def main(unparsed_argv):
     eval_input = lambda: gqn_input_fn(
         dataset=FLAGS.dataset,
         context_size=gqn_config.CONTEXT_SIZE,
+        custom_frame_size=64,
         root=FLAGS.data_dir,
         mode=tf.estimator.ModeKeys.EVAL,
         batch_size=FLAGS.batch_size,
@@ -146,6 +149,7 @@ def main(unparsed_argv):
     train_input = lambda: gqn_input_fn(
         dataset=FLAGS.dataset,
         context_size=gqn_config.CONTEXT_SIZE,
+        custom_frame_size=64,
         root=FLAGS.data_dir,
         mode=tf.estimator.ModeKeys.TRAIN,
         batch_size=FLAGS.batch_size,
@@ -157,11 +161,15 @@ def main(unparsed_argv):
         hooks=[logging_hook],
     )
 
+    #### SKIP EVALUATION
+    continue
+
     # evaluate the model on the validation set
     eval_input = lambda: gqn_input_fn(
         dataset=FLAGS.dataset,
         context_size=gqn_config.CONTEXT_SIZE,
         root=FLAGS.data_dir,
+        custom_frame_size=64,
         mode=tf.estimator.ModeKeys.EVAL,
         batch_size=FLAGS.batch_size,
         num_threads=FLAGS.queue_threads,
