@@ -19,7 +19,8 @@ import tensorflow as tf
 
 from .gqn_params import GQNConfig
 from .gqn_encoder import tower_encoder, pool_encoder
-from .gqn_draw import inference_rnn, generator_rnn
+# from .gqn_draw import inference_rnn, generator_rnn
+from .gqn_draw_attention import inference_rnn, generator_rnn
 from .gqn_utils import broadcast_encoding, compute_eta_and_sample_z
 from .gqn_vae import vae_tower_decoder
 

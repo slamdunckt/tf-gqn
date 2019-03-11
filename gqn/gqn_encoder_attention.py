@@ -80,7 +80,7 @@ def patch_encoder(frames: tf.Tensor, poses: tf.Tensor, scope="PatchEncoder"):
     return net, endpoints
 
 
-def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, scope="Patcher"):
+def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor, scope="Patcher"):
   """
   Attention algorithm goes here with patching
   """
@@ -94,7 +94,6 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, scope="Patcher"
     patches = tf.reshape(patches, [-1,8,8,3])
     print("Size of variable patches : ", tf.shape(patches))
     print("   has to be 1440x8x8x3")
-"""
     # embedding pos to patch
     net = tf.layers.conv2d(patches, filters=32, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
@@ -106,7 +105,7 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, scope="Patcher"
     # TODO(ogroth): correct implementation for the skip connection?
     net = net + skip1
     net = tf.layers.conv2d(net, filters=64, kernel_size=2, strides=1, padding="SAME", activation=tf.nn.relu)
-"""
+
     # tile the poses to match the embedding shape
     height, width = tf.shape(net)[1], tf.shape(net)[2]
     poses = tf.reshape(poses, [-1,1,1,7])
@@ -120,7 +119,7 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, scope="Patcher"
     new_poses = tf.convert_to_tensor(temp, dtype=tf.float32)
     new_poses = tf.reshape(1,8,8,-1)
     if(tf.shape(new_poses[3])!=2):
-        print("error on patch poses!")
+        print("error on new_poses!")
     context_tmp = tf.shape(poses[0])
     patch_poses=tf.tile(new_poses,[context_tmp,1,1,1]) #1280 x 8 x 8 x 2
     if(tf.shape(new_poses[0])!=1280):
@@ -132,17 +131,17 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, scope="Patcher"
 
     # concatenate the poses with the embedding
     net = tf.concat([net, total_poses], axis=3) # 1280 x 8 x 8 x 11
-    if(tf.shape(new_poses[3])!=11):
-        print("error on last dimension for net!")
-    # skip2 = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
-    #                          padding="SAME", activation=None)
-    # net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1,
-    #                        padding="SAME", activation=tf.nn.relu)
-    # net = net + skip2
-    # net = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
-    #                        padding="SAME", activation=tf.nn.relu)
-    # net = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
-    #                        padding="SAME", activation=tf.nn.relu)
+    # if(tf.shape(new_poses[3])!=12):
+    #     print("error on last dimension for net!")
+    skip2 = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
+                             padding="SAME", activation=None)
+    net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1,
+                           padding="SAME", activation=tf.nn.relu)
+    net = net + skip2
+    net = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
+                           padding="SAME", activation=tf.nn.relu)
+    net = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
+                           padding="SAME", activation=tf.nn.relu)
 
 
 # patch image
@@ -150,24 +149,10 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, scope="Patcher"
     patched_keys=tf.reshape(keys, shape=[-1,1,1,64])
     packed_keys=tf.tile(patched_keys, [1,8,8,64]) #1280x8x8x64
 
-    patch_key_combine = tf.matmul(patches, packed_keys, transpose_b=True)
+#TODO need to add attention dot product score
+
+    patch_key_combine = tf.matmul(state, packed_keys, transpose_b=True)
     attention_softmax = tf.nn.softmax(patch_key_combine,axis=0)
+    representation = tf.reduce_sum(attention_softmax*net, axis=0)
 
-
-
-
-
-  return net, endpoints
-
- def _reduce_packed_representation(enc_r_packed, model_params):
-     _CONTEXT_SIZE = model_params.CONTEXT_SIZE
-     _DIM_C_ENC = model_params.ENC_CHANNELS
-     height, width = tf.shape(enc_r_packed)[1], tf.shape(enc_r_packed)[2]
-
-     enc_r_unpacked = tf.reshape(
-        enc_r_packed, shape=[-1, _CONTEXT_SIZE, height, width, _DIM_C_ENC])
-
-    # add scene representations per data tuple
-    enc_r = tf.reduce_sum(enc_r_unpacked, axis=1)
-
-    return enc_r
+  return representation

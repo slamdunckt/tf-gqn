@@ -28,9 +28,9 @@ GQN_DEFAULT_PARAM_DICT = {
     'LSTM_CANVAS_CHANNELS' : 64,
     'LSTM_KERNEL_SIZE' : 5,
     'Z_CHANNELS' : 64,  # latent space size per image generation step
-    #TODO need to change INPUT channel of LSTM
-    'GENERATOR_INPUT_CHANNELS' : 327,  # pose + representation + z
-    'INFERENCE_INPUT_CHANNELS' : 263,  # pose + representation
+    #TODO need to change INPUT channel of LSTM 64 64 7 128
+    'GENERATOR_INPUT_CHANNELS' : 135,  # pose + representation + z
+    'INFERENCE_INPUT_CHANNELS' : 71,  # pose + representation
     'SEQ_LENGTH' : 8,  # number image generation steps, orig.: 12
     # hyper-parameters: eta functions
     'ETA_INTERNAL_KERNEL_SIZE' : 5,  # internal projection of states to means and variances

@@ -27,6 +27,7 @@ from collections import namedtuple
 
 import tensorflow as tf
 
+from . gqn_encoder_attention import patch_encoer, patcher
 from .gqn_params import GQN_DEFAULT_CONFIG
 from .gqn_utils import broadcast_pose, create_sub_scope, \
   eta_g, compute_eta_and_sample_z, sample_z
@@ -395,7 +396,7 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
       if varscope.caching_device is None:
         varscope.set_caching_device(lambda op: op.device)
 
-    query_poses = broadcast_pose(query_poses, height, width)
+    query_poses = broadcast_pose(query_poses, height, width)#20 x 8 x8 x7
 
     inf_state = inference_cell.zero_state(batch, tf.float32)
     gen_state = generator_cell.zero_state(batch, tf.float32)
@@ -403,9 +404,8 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
     # unroll the LSTM cells
     for step in range(sequence_size):
 
-      # TODO(ogroth): currently no variable sharing, remove?
-      # generator and inference cell need to have the same variable scope
-      # for variable sharing!
+      # TODO Attention softmax goes here!!
+      representations = patcher(context_frames_packed, context_poses_packed, encoder_packed, inf_state)
 
       # input into inference RNN
       inf_input = _InferenceCellInput(
