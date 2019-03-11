@@ -27,7 +27,7 @@ from collections import namedtuple
 
 import tensorflow as tf
 
-from . gqn_encoder_attention import patch_encoer, patcher
+from . gqn_encoder_attention import patch_encoder, patcher
 from .gqn_params import GQN_DEFAULT_CONFIG
 from .gqn_utils import broadcast_pose, create_sub_scope, \
   eta_g, compute_eta_and_sample_z, sample_z
@@ -405,8 +405,7 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
     for step in range(sequence_size):
 
       # TODO Attention softmax goes here!!
-      representations = patcher(context_frames_packed, context_poses_packed, encoder_packed, inf_state)
-
+      representations = patcher(context_frames, context_poses, encoder_packed, inf_state)
       # input into inference RNN
       inf_input = _InferenceCellInput(
           representations, query_poses, target_frames, gen_state.canvas,

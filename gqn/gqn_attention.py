@@ -19,7 +19,7 @@ import tensorflow as tf
 from .gqn_params import GQNConfig
 from .gqn_encoder import tower_encoder, pool_encoder
 from .gqn_encoder_attention import patch_encoder, patcher
-from .gqn_draw import inference_rnn, generator_rnn
+from .gqn_draw_attention import inference_rnn, generator_rnn
 from .gqn_utils import broadcast_encoding, compute_eta_and_sample_z
 from .gqn_vae import vae_tower_decoder
 
@@ -71,9 +71,6 @@ def _encode_context(encoder_fn, context_poses, context_frames, model_params):
   enc_r_packed, endpoints_psi = encoder_fn(context_frames_packed,
                                            context_poses_packed)
   endpoints.update(endpoints_psi)
-  # patch image and concat it's position
-  enc_r = patcher( context_frames_packed, context_poses_packed, enc_r_packed)
-
   # unpack scene encoding and reduce to single vector
   enc_r = _reduce_packed_representation(enc_r_packed, model_params)
   endpoints["enc_r"] = enc_r
@@ -119,28 +116,20 @@ def gqn_draw(
         _ENC_FUNCTIONS[_ENC_TYPE], context_poses, context_frames, model_params)
     endpoints.update(endpoints_enc)
 
-    # broadcast scene representation to 1/4 of targeted frame size
-    if _ENC_TYPE == 'pool':
-      enc_r_broadcast = broadcast_encoding(
-          vector=enc_r, height=_DIM_H_ENC, width=_DIM_W_ENC)
-    else:
-      enc_r_broadcast = tf.reshape(enc_r, [-1, _DIM_H_ENC, _DIM_W_ENC, _DIM_C_ENC])
 
-
-"""
-Dictionary for attention goes here!
-"""
-
-
-
-
-
-    # define generator graph (with inference component if in training mode)
+    enc_r_broadcast = tf.reshape(enc_r, [-1, _DIM_H_ENC, _DIM_W_ENC, _DIM_C_ENC])
+    context_poses_packed, context_frames_packed= _pack_context(
+        context_poses, context_frames, model_params)
+    # print(tf.shape(context_frames_packed))
+    # print(tf.shape(context_poses_packed))
+    # print(tf.shape(enc_r_broadcast))
+    # print(tf.shape(enc_r))
+    # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     if is_training:
       mu_target, endpoints_rnn = inference_rnn(
           context_frames=context_frames_packed,
-          contex_poses=context_poses_packed,
-          encoder_packed=enc_r_packed,
+          context_poses=context_poses_packed,
+          encoder_packed=enc_r_broadcast,
           # representations=enc_r_broadcast,
           query_poses=query_pose,
           target_frames=target_frame,

@@ -17,7 +17,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from .gqn_graph import gqn_draw, gqn_vae
+from .gqn_attention import gqn_draw, gqn_vae
 from .gqn_objective import gqn_draw_elbo, gqn_vae_elbo
 from .gqn_params import GQNConfig, GQN_DEFAULT_PARAM_DICT
 from .gqn_utils import debug_canvas_image_mean
