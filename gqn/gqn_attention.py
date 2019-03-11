@@ -120,10 +120,9 @@ def gqn_draw(
     enc_r_broadcast = tf.reshape(enc_r, [-1, _DIM_H_ENC, _DIM_W_ENC, _DIM_C_ENC])
     context_poses_packed, context_frames_packed= _pack_context(
         context_poses, context_frames, model_params)
-    # print(tf.shape(context_frames_packed))
-    # print(tf.shape(context_poses_packed))
-    # print(tf.shape(enc_r_broadcast))
-    # print(tf.shape(enc_r))
+    # print(context_frames_packed.get_shape()) ? 32 32 3
+    # print(context_poses_packed.get_shape()) ? 7
+    # print(enc_r_broadcast.get_shape()) ? 8 8 64
     # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     if is_training:
       mu_target, endpoints_rnn = inference_rnn(

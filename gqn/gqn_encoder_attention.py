@@ -57,8 +57,6 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   # patches
   patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,3], strides=[1,4,4,3],rates=[1,1,1,1], padding="SAME")
   patches = tf.reshape(patches, [-1,8,8,3])
-  print(">>>>>>>>>>>>Size of variable patches : ", tf.shape(patches))
-  print("   has to be 1440x8x8x3")
   # embedding pos to patch
   net = tf.layers.conv2d(patches, filters=32, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
@@ -84,15 +82,14 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
     temp.append(tt)
   empty=[]
   empty.append(temp)
-  empty = np.array(empty)
-  print(empty.shape) # 8 8 2
-
+  empty = np.array(empty)# 1 8 8 2
   new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
   # new_poses = tf.reshape(-1,8,8,2)
-  if(tf.shape(new_poses[3])!=2):
-      print("error on new_poses!")
+
   context_tmp = tf.shape(poses[0])
+  print("??????????????????????????????????????????????????????????????????????????")
   patch_poses=tf.tile(new_poses,[context_tmp,1,1,1]) #1280 x 8 x 8 x 2
+
   if(tf.shape(new_poses[0])!=1280):
         print("error on number of patches for patch_poses!")
   total_poses = tf.concat([poses, patch_poses], axis=3) #1280 x 8 x 8 x 9
@@ -119,7 +116,6 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
 
   patched_keys=tf.reshape(keys, shape=[-1,1,1,64])
   packed_keys=tf.tile(patched_keys, [1,8,8,64]) #1280x8x8x64
-
     #TODO need to add attention dot product score
 
   patch_key_combine = tf.matmul(state, packed_keys, transpose_b=True)
