@@ -12,22 +12,23 @@ import copy
 
 GQN_DEFAULT_PARAM_DICT = {
     # constants
-    'IMG_HEIGHT' : 64,
-    'IMG_WIDTH' : 64,
+    'IMG_HEIGHT' : 32,
+    'IMG_WIDTH' : 32,
     'IMG_CHANNELS' : 3,
     'POSE_CHANNELS' : 7,
     # input parameters
     'CONTEXT_SIZE' : 20,
     # hyper-parameters: scene representation
-    'ENC_TYPE' : 'tower',  # encoding architecture used: pool | maxpool | tower
-    'ENC_HEIGHT' : 16,
-    'ENC_WIDTH' : 16,
-    'ENC_CHANNELS' : 256,
+    'ENC_TYPE' : 'patch',  # encoding architecture used: pool | maxpool | tower
+    'ENC_HEIGHT' : 8,
+    'ENC_WIDTH' : 8,
+    'ENC_CHANNELS' : 64,
     # hyper-parameters: generator LSTM
-    'LSTM_OUTPUT_CHANNELS' : 256,
-    'LSTM_CANVAS_CHANNELS' : 256,
+    'LSTM_OUTPUT_CHANNELS' : 64,
+    'LSTM_CANVAS_CHANNELS' : 64,
     'LSTM_KERNEL_SIZE' : 5,
     'Z_CHANNELS' : 64,  # latent space size per image generation step
+    #TODO need to change INPUT channel of LSTM
     'GENERATOR_INPUT_CHANNELS' : 327,  # pose + representation + z
     'INFERENCE_INPUT_CHANNELS' : 263,  # pose + representation
     'SEQ_LENGTH' : 8,  # number image generation steps, orig.: 12

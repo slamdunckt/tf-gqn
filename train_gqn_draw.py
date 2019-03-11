@@ -130,7 +130,7 @@ def main(unparsed_argv):
     eval_input = lambda: gqn_input_fn(
         dataset=FLAGS.dataset,
         context_size=gqn_config.CONTEXT_SIZE,
-        custom_frame_size=64,
+        custom_frame_size=32,
         root=FLAGS.data_dir,
         mode=tf.estimator.ModeKeys.EVAL,
         batch_size=FLAGS.batch_size,
@@ -149,7 +149,7 @@ def main(unparsed_argv):
     train_input = lambda: gqn_input_fn(
         dataset=FLAGS.dataset,
         context_size=gqn_config.CONTEXT_SIZE,
-        custom_frame_size=64,
+        custom_frame_size=32,
         root=FLAGS.data_dir,
         mode=tf.estimator.ModeKeys.TRAIN,
         batch_size=FLAGS.batch_size,
@@ -169,7 +169,7 @@ def main(unparsed_argv):
         dataset=FLAGS.dataset,
         context_size=gqn_config.CONTEXT_SIZE,
         root=FLAGS.data_dir,
-        custom_frame_size=64,
+        custom_frame_size=32,
         mode=tf.estimator.ModeKeys.EVAL,
         batch_size=FLAGS.batch_size,
         num_threads=FLAGS.queue_threads,

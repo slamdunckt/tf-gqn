@@ -1,6 +1,5 @@
 """
 Contains the GQN graph definition.
-
 Original paper:
 'Neural scene representation and rendering'
 S. M. Ali Eslami, Danilo J. Rezende, Frederic Besse, Fabio Viola, Ari S. Morcos,
@@ -19,7 +18,7 @@ import tensorflow as tf
 
 from .gqn_params import GQNConfig
 from .gqn_encoder import tower_encoder, pool_encoder
-from .gqn_encoder_attention import patch_encoder
+from .gqn_encoder_attention import patch_encoder, patcher
 from .gqn_draw import inference_rnn, generator_rnn
 from .gqn_utils import broadcast_encoding, compute_eta_and_sample_z
 from .gqn_vae import vae_tower_decoder
@@ -28,7 +27,7 @@ from .gqn_vae import vae_tower_decoder
 _ENC_FUNCTIONS = {
     'pool' : pool_encoder,
     'tower' : tower_encoder,
-    'patch' : patch_encoder
+    'patch' : patch_encoder,
 }
 
 def _pack_context(context_poses, context_frames, model_params):
@@ -46,53 +45,23 @@ def _pack_context(context_poses, context_frames, model_params):
   return context_poses_packed, context_frames_packed
 
 
-
-def _attention_unpacked_representation(enc_r_extracted, model_params,query_pose):
-  _CONTEXT_SIZE = model_params.CONTEXT_SIZE
-
-  query_pose_reshape = tf.reshape(
-    query_pose, shape=[-1,1,1,1,7])
-  query_pose_dense = tf.layers.dense(query_pose_reshape,units=64,activation=tf.nn.relu,name='pose_dense1')
-  query_pose_dense = tf.layers.dense(query_pose_dense,units=256,activation=tf.nn.relu,name='pose_dense2')
-  query_pose_dup = tf.tile(
-    query_pose_dense, [1,_CONTEXT_SIZE,1,1,1])
-  enc_r_combine = tf.matmul(enc_r_extracted,query_pose_dup,transpose_b=True)
-  attention_softmax = tf.nn.softmax(enc_r_combine,axis=1)
-  #enc_r_combine = tf.concat((enc_r_extracted,query_pose_dup),axis=-1)
-  #dense1 = tf.layers.dense(enc_r_combine, units=64, activation=tf.nn.relu, name='attn_dense1')
-  #dense2 = tf.layers.dense(dense1, units=8, activation=tf.nn.relu, name='attn_dense2')
-  #dense3 = tf.layers.dense(dense2, units=1, name='attn_dense3')
-  #attention_softmax = tf.nn.softmax(dense3,axis=1)
-  return attention_softmax
-
-def _reduce_packed_representation(enc_r_packed, model_params,query_pose):
+def _reduce_packed_representation(enc_r_packed, model_params):
   # shorthand notations for model parameters
   _CONTEXT_SIZE = model_params.CONTEXT_SIZE
   _DIM_C_ENC = model_params.ENC_CHANNELS
-  _ENC_TYPE = model_params.ENC_TYPE
 
   height, width = tf.shape(enc_r_packed)[1], tf.shape(enc_r_packed)[2]
 
   enc_r_unpacked = tf.reshape(
       enc_r_packed, shape=[-1, _CONTEXT_SIZE, height, width, _DIM_C_ENC])
 
-  #apply attention
-  if _ENC_TYPE == 'tower':
-      # pool2d(input, pool_size, stride)
-    enc_r_pooling = tf.layers.average_pooling2d(enc_r_packed, 16, 1, name='pooling')
-    enc_r_extracted = tf.reshape(
-      enc_r_pooling, shape=[-1,_CONTEXT_SIZE,1,1,_DIM_C_ENC])
-  elif _ENC_TYPE == 'pool':
-    enc_r_extracted = enc_r_unpacked
-  enc_attention = _attention_unpacked_representation(enc_r_extracted, model_params,query_pose)
-
-  # add scene representations per data tuple with attention
-  enc_r = tf.reduce_sum(enc_attention*enc_r_unpacked, axis=1)
+  # add scene representations per data tuple
+  enc_r = tf.reduce_sum(enc_r_unpacked, axis=1)
 
   return enc_r
 
 
-def _encode_context(encoder_fn, context_poses, context_frames, model_params,query_pose):
+def _encode_context(encoder_fn, context_poses, context_frames, model_params):
   endpoints = {}
 
   context_poses_packed, context_frames_packed = _pack_context(
@@ -102,9 +71,11 @@ def _encode_context(encoder_fn, context_poses, context_frames, model_params,quer
   enc_r_packed, endpoints_psi = encoder_fn(context_frames_packed,
                                            context_poses_packed)
   endpoints.update(endpoints_psi)
+  # patch image and concat it's position
+  enc_r = patcher( context_frames_packed, context_poses_packed, enc_r_packed)
 
   # unpack scene encoding and reduce to single vector
-  enc_r = _reduce_packed_representation(enc_r_packed, model_params,query_pose)
+  enc_r = _reduce_packed_representation(enc_r_packed, model_params)
   endpoints["enc_r"] = enc_r
 
   return enc_r, endpoints
@@ -117,7 +88,6 @@ def gqn_draw(
     scope: str = "GQN"):
   """
   Defines the computational graph of the GQN model.
-
   Arguments:
     query_pose: Pose vector of the query camera.
     target_frame: Ground truth frame of the query camera. Used in training mode
@@ -130,7 +100,6 @@ def gqn_draw(
       the inference module necessary for training the generator). If set to 'False',
       only the generator LSTM will be created.
     scope: Scope name of the graph.
-
   Returns:
     net: The last tensor of the network.
     endpoints: A dictionary providing quick access to the most important model
@@ -147,7 +116,7 @@ def gqn_draw(
     endpoints = {}
 
     enc_r, endpoints_enc = _encode_context(
-        _ENC_FUNCTIONS[_ENC_TYPE], context_poses, context_frames, model_params,query_pose)
+        _ENC_FUNCTIONS[_ENC_TYPE], context_poses, context_frames, model_params)
     endpoints.update(endpoints_enc)
 
     # broadcast scene representation to 1/4 of targeted frame size
@@ -156,6 +125,8 @@ def gqn_draw(
           vector=enc_r, height=_DIM_H_ENC, width=_DIM_W_ENC)
     else:
       enc_r_broadcast = tf.reshape(enc_r, [-1, _DIM_H_ENC, _DIM_W_ENC, _DIM_C_ENC])
+
+
 """
 Dictionary for attention goes here!
 """
@@ -164,14 +135,13 @@ Dictionary for attention goes here!
 
 
 
-
-
-
-
     # define generator graph (with inference component if in training mode)
     if is_training:
       mu_target, endpoints_rnn = inference_rnn(
-          representations=enc_r_broadcast,
+          context_frames=context_frames_packed,
+          contex_poses=context_poses_packed,
+          encoder_packed=enc_r_packed,
+          # representations=enc_r_broadcast,
           query_poses=query_pose,
           target_frames=target_frame,
           sequence_size=_SEQ_LENGTH,
@@ -194,7 +164,6 @@ def gqn_vae(
     model_params: GQNConfig, scope: str = "GQN-VAE"):
   """
   Defines the computational graph of the GQN-VAE baseline model.
-
   Arguments:
     query_pose: Pose vector of the query camera.
     context_poses: Camera poses of the context views.
@@ -202,7 +171,6 @@ def gqn_vae(
     model_params: Named tuple containing the parameters of the GQN model as \
       defined in gqn_params.py
     scope: Scope name of the graph.
-
   Returns:
     net: The last tensor of the network.
     endpoints: A dictionary providing quick access to the most important model
@@ -212,7 +180,7 @@ def gqn_vae(
     endpoints = {}
 
     enc_r, endpoints_enc = _encode_context(
-        tower_encoder, context_poses, context_frames, model_params,query_pose)
+        tower_encoder, context_poses, context_frames, model_params)
     endpoints.update(endpoints_enc)
 
     mu_z, sigma_z, z = compute_eta_and_sample_z(
