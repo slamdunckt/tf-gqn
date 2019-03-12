@@ -18,6 +18,7 @@ GQN_DEFAULT_PARAM_DICT = {
     'POSE_CHANNELS' : 7,
     # input parameters
     'CONTEXT_SIZE' : 20,
+    'PATCH_SIZE' : 1280,
     # hyper-parameters: scene representation
     'ENC_TYPE' : 'patch',  # encoding architecture used: pool | maxpool | tower
     'ENC_HEIGHT' : 8,

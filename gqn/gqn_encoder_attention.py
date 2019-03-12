@@ -86,16 +86,9 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
   # new_poses = tf.reshape(-1,8,8,2)
 
-  context_tmp = tf.shape(poses[0])
-  print("??????????????????????????????????????????????????????????????????????????")
-  patch_poses=tf.tile(new_poses,[context_tmp,1,1,1]) #1280 x 8 x 8 x 2
-
-  if(tf.shape(new_poses[0])!=1280):
-        print("error on number of patches for patch_poses!")
+  patch_poses=tf.tile(new_poses,[1280,1,1,1]) #1280 x 8 x 8 x 2
   total_poses = tf.concat([poses, patch_poses], axis=3) #1280 x 8 x 8 x 9
-  if(tf.shape(new_poses[3])!=9):
-        print("error on last dimension for patch_poses!")
-
+  # print(">>>>>>>>>>>>>>>>",total_poses.get_shape()) #1280x8x8x9
 
     # concatenate the poses with the embedding
   net = tf.concat([net, total_poses], axis=3) # 1280 x 8 x 8 x 11
@@ -111,16 +104,20 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   net = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
 
-
     # patch image
 
   patched_keys=tf.reshape(keys, shape=[-1,1,1,64])
-  packed_keys=tf.tile(patched_keys, [1,8,8,64]) #1280x8x8x64
+  packed_keys=tf.tile(patched_keys, [1,8,8,1]) #1280x8x8x64
     #TODO need to add attention dot product score
-
+  print(">>>>>>>>>>>>>>>>>",packed_keys.get_shape())
   patch_key_combine = tf.matmul(state, packed_keys, transpose_b=True)
+  print(">>>>>>>>>>>>>>>>>",patch_key_combine.get_shape())
   attention_softmax = tf.nn.softmax(patch_key_combine,axis=0)
+  print(">>>>>>>>>>>>>>>>>",attention_softmax.get_shape())
+
   representation = tf.reduce_sum(attention_softmax*net, axis=0)
+
+
 
 
   return representation

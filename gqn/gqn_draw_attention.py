@@ -405,7 +405,8 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
     for step in range(sequence_size):
 
       # TODO Attention softmax goes here!!
-      representations = patcher(context_frames, context_poses, encoder_packed, inf_state)
+      # print(">>>>>>>>>>>>>>>>>>>>>>>", inf_state[1])
+      representations = patcher(context_frames, context_poses, encoder_packed, inf_state.lstm.c)
       # input into inference RNN
       inf_input = _InferenceCellInput(
           representations, query_poses, target_frames, gen_state.canvas,
