@@ -17,7 +17,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from .gqn_graph import gqn_draw, gqn_vae
+from .gqn_attention import gqn_draw, gqn_vae
 from .gqn_objective import gqn_draw_elbo, gqn_vae_elbo
 from .gqn_params import GQNConfig, GQN_DEFAULT_PARAM_DICT
 from .gqn_utils import debug_canvas_image_mean
@@ -55,7 +55,7 @@ def _linear_lr_annealing(gqn_params: GQNConfig) -> tf.Tensor:
   return lr
 
 
-def gqn_draw_model_fn(features, labels, mode, params):
+def gqn_draw_model_fn_a(features, labels, mode, params):
   """
   Defines an tf.estimator.EstimatorSpec for the GQN model.
 
@@ -200,7 +200,7 @@ def gqn_draw_model_fn(features, labels, mode, params):
   return estimator_spec
 
 
-def gqn_draw_identity_model_fn(features, labels, mode, params):
+def gqn_draw_identity_model_fn_a(features, labels, mode, params):
   """
   Defines an tf.estimator.EstimatorSpec for the GQN model.
   Debug version of the model function learning an identity between input and

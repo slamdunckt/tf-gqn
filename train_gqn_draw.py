@@ -11,10 +11,13 @@ import os
 import argparse
 import tensorflow as tf
 
+from gqn.gqn_model_attention import gqn_draw_model_fn_a, gqn_draw_identity_model_fn_a
 from gqn.gqn_model import gqn_draw_model_fn, gqn_draw_identity_model_fn
 from gqn.gqn_params import create_gqn_config
 from data_provider.gqn_tfr_provider import gqn_input_fn
 
+
+attention = False
 
 # command line argument parser
 ARGPARSER = argparse.ArgumentParser(
@@ -108,14 +111,22 @@ def main(unparsed_argv):
       'gqn_params' : gqn_config,
       'debug' : FLAGS.debug,
   }
-  classifier = tf.estimator.Estimator(
-      model_fn=gqn_draw_model_fn,
-      #model_fn=gqn_draw_identity_model_fn,
-      model_dir=FLAGS.model_dir,
-      config=run_config,
-      params=model_params,
-  )
-
+  if attention:
+      classifier = tf.estimator.Estimator(
+          model_fn=gqn_draw_model_fn_a,
+          #model_fn=gqn_draw_identity_model_fn_a,
+          model_dir=FLAGS.model_dir,
+          config=run_config,
+          params=model_params,
+      )
+  else:
+      classifier = tf.estimator.Estimator(
+          model_fn=gqn_draw_model_fn,
+          #model_fn=gqn_draw_identity_model_fn,
+          model_dir=FLAGS.model_dir,
+          config=run_config,
+          params=model_params,
+      )
   # create logging hooks
   tensors_to_log = {
       'l2_reconstruction' : 'l2_reconstruction'
