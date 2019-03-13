@@ -8,4 +8,4 @@ python3 train_gqn_draw.py \
   --chkpt_steps 1000 \
   --log_steps 100 \
   --train_epochs 500 \
-  --batch_size 30
+  --batch_size 36

@@ -59,11 +59,14 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   state_keys = tf.tile(state_keys, [1280,1,1])
 
   # patches now 1280(36) x 32 x 32 x 3
-  patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,3], strides=[1,4,4,3],rates=[1,1,1,1], padding="SAME")
+  patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
   patches = tf.reshape(patches, [-1,8,8,3])
+
+
   # embedding pos to patch
   net = tf.layers.conv2d(patches, filters=32, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
+
   skip1 = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
                              padding="SAME", activation=None)
   net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1,
@@ -75,8 +78,8 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   # patches now 1280(36) x 8 x 8 x 64
 
   # tile the poses to match the embedding shape
-  height, width = tf.shape(net)[1], tf.shape(net)[2]
   poses = tf.reshape(poses, [-1,1,1,7]) # 20(36) x 1 x 1 x 7
+  # print(poses.get_shape())
   poses = tf.tile(poses, [64,8,8,1]) # 1280(36) x 8 x 8 x 7
 
   temp = []
@@ -107,6 +110,7 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
                            padding="SAME", activation=tf.nn.relu)
   net = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
+  keys =tf.tile(keys, [1280,1,1,1])
   packed_keys = tf.reshape(keys, [-1,64,64])
     # patch image
   # print(">>>>>>>>>>>>>>>>>",net.get_shape())
