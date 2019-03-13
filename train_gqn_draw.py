@@ -17,7 +17,7 @@ from gqn.gqn_params import create_gqn_config
 from data_provider.gqn_tfr_provider import gqn_input_fn
 
 
-attention = False
+attention = True
 
 # command line argument parser
 ARGPARSER = argparse.ArgumentParser(

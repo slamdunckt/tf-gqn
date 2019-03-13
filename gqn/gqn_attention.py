@@ -123,7 +123,7 @@ def gqn_draw(
     # print(context_frames_packed.get_shape()) ? 32 32 3
     # print(context_poses_packed.get_shape()) ? 7
     # print(enc_r_broadcast.get_shape()) ? 8 8 64
-    # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+    # 1280(36) x 8 x 8 x 64
     if is_training:
       mu_target, endpoints_rnn = inference_rnn(
           context_frames=context_frames_packed,

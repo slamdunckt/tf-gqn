@@ -374,7 +374,7 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
   """
 
   # dim_r = representations.get_shape().as_list()
-  batch = 1280
+  batch = 36
   height, width = 8,8
 
   generator_cell = GeneratorLSTMCell(

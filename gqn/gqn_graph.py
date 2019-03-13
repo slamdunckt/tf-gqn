@@ -154,7 +154,6 @@ def gqn_draw(
           vector=enc_r, height=_DIM_H_ENC, width=_DIM_W_ENC)
     else:
       enc_r_broadcast = tf.reshape(enc_r, [-1, _DIM_H_ENC, _DIM_W_ENC, _DIM_C_ENC])
-
     # define generator graph (with inference component if in training mode)
     if is_training:
       mu_target, endpoints_rnn = inference_rnn(
