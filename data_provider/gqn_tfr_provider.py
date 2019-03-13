@@ -473,6 +473,7 @@ def gqn_input_fn(
 
   frames, cameras = it.get_next()
   context_frames = frames[:, :-1]
+  print(">>>>>>>>>>>>>>>>>>>>>>>>",context_frames.get_shape())
   context_cameras = cameras[:, :-1]
   target = frames[:, -1]
   query_camera = cameras[:, -1]
