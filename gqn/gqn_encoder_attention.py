@@ -45,7 +45,7 @@ def patch_encoder(frames: tf.Tensor, poses: tf.Tensor, scope="PatchEncoder"):
     return net, endpoints
 
 
-def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor, scope="Patcher"):
+def patcher(patch_dic: tf.Tensor,keys:tf.Tensor, state:tf.Tensor, scope="Patcher"):
   """
   Attention algorithm goes here with patching
   """
@@ -55,9 +55,9 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   # keys = f(state)
 
   state_keys = tf.layers.conv2d(state, filters=64, kernel_size=1, strides=1,padding="VALID", activation=tf.nn.relu)
-  state_keys = tf.reshape(state_keys, [36, -1, 64]) # 36 x 64 x 64
-  state_keys = tf.tile(state_keys, [1280,1,1])
-
+  state_keys = tf.reshape(state_keys, [10, -1, 64]) # 36 x 64 x 64
+  state_keys = tf.tile(state_keys, [1280,1,1]) #1280(36) x 64 x 64
+  '''
   # patches now 1280(36) x 32 x 32 x 3
   patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
   patches = tf.reshape(patches, [-1,8,8,3])
@@ -94,7 +94,7 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
   # new_poses = tf.reshape(-1,8,8,2)
 
-  patch_poses=tf.tile(new_poses,[46080,1,1,1]) #1280(36) x 8 x 8 x 2
+  patch_poses=tf.tile(new_poses,[12800,1,1,1]) #1280(36) x 8 x 8 x 2
   total_poses = tf.concat([poses, patch_poses], axis=3) #1280(36) x 8 x 8 x 9
   # print(">>>>>>>>>>>>>>>>",total_poses.get_shape()) #1280(36)x8x8x9
 
@@ -110,6 +110,8 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
                            padding="SAME", activation=tf.nn.relu)
   net = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
+
+  '''
   keys =tf.tile(keys, [1280,1,1,1])
   packed_keys = tf.reshape(keys, [-1,64,64])
     # patch image
@@ -124,9 +126,9 @@ def patcher(frames: tf.Tensor, poses: tf.Tensor, keys:tf.Tensor, state:tf.Tensor
   attention_softmax = tf.nn.softmax(patch_key_combine,axis=0)
   # print(">>>>>>>>>>>>>>>>>",attention_softmax.get_shape())
 
-  batch_net = tf.reshape(net, [36, -1, 8, 8, 64])
-  attention_softmax = tf.reshape(attention_softmax, [36, -1, 8, 8, 64])
-  representation = tf.reduce_sum(attention_softmax*batch_net, axis=1)
+  patch_dic_in = tf.reshape(patch_dic, [10, -1, 8, 8, 64])
+  attention_softmax = tf.reshape(attention_softmax, [10, -1, 8, 8, 64])
+  representation = tf.reduce_sum(attention_softmax*patch_dic_in, axis=1)
 
 
 

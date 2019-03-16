@@ -313,17 +313,17 @@ class InferenceLSTMCell(tf.contrib.rnn.RNNCell):
     return _InferenceCellOutput(output), _InferenceCellState(new_state)
 
 
-def generator_rnn(representations, query_poses, sequence_size=12,
+def generator_rnn(patch_dic,encoder_packed, query_poses, sequence_size=12,
                   scope="GQN_RNN"):
   """
   Creates the computational graph for the DRAW module in generation mode.
   This is the test time setup where no posterior can be inferred from the
   target image.
   """
-
-  dim_r = representations.get_shape().as_list()
-  batch = tf.shape(representations)[0]
-  height, width = dim_r[1], dim_r[2]
+  #
+  # dim_r = representations.get_shape().as_list()
+  batch = 10
+  height, width = 8,8
 
   cell = GeneratorLSTMCell(
       input_shape=[height, width, GQN_DEFAULT_CONFIG.GENERATOR_INPUT_CHANNELS],
@@ -345,6 +345,8 @@ def generator_rnn(representations, query_poses, sequence_size=12,
     # unroll generator LSTM
     for step in range(sequence_size):
       z = sample_z(state.lstm.h, scope="Sample_eta_pi")
+      representations = patcher(patch_dic, encoder_packed, state.lstm.c)
+
       inputs = _GeneratorCellInput(representations, query_poses, z)
       with tf.name_scope("Generator"):
         (output, state) = cell(inputs, state, "LSTM_gen")
@@ -365,8 +367,8 @@ def generator_rnn(representations, query_poses, sequence_size=12,
   return mu_target, endpoints
 
 
-def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, target_frames, sequence_size=12,
-                  scope="GQN_RNN"):
+def inference_rnn(patch_dic, context_frames, context_poses, encoder_packed, query_poses, 
+    target_frames, sequence_size=12, scope="GQN_RNN"):
   """
   Creates the computational graph for the DRAW module in inference mode.
   This is the training time setup where the posterior can be inferred from the
@@ -374,7 +376,7 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
   """
 
   # dim_r = representations.get_shape().as_list()
-  batch = 36
+  batch = 10
   height, width = 8,8
 
   generator_cell = GeneratorLSTMCell(
@@ -406,7 +408,7 @@ def inference_rnn(context_frames, context_poses, encoder_packed, query_poses, ta
 
       # TODO Attention softmax goes here!!
       # print(">>>>>>>>>>>>>>>>>>>>>>>", inf_state[1])
-      representations = patcher(context_frames, context_poses, encoder_packed, inf_state.lstm.c)
+      representations = patcher(patch_dic, encoder_packed, inf_state.lstm.c)
       # input into inference RNN
       inf_input = _InferenceCellInput(
           representations, query_poses, target_frames, gen_state.canvas,

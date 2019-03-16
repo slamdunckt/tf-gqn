@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from gqn.gqn_params import GQN_DEFAULT_CONFIG as PARAMS
-from gqn.gqn_graph import gqn_draw
+from gqn.gqn_attention import gqn_draw
 from data_provider.gqn_tfr_provider import gqn_input_fn
 
 import matplotlib.pyplot as plt
@@ -27,8 +27,8 @@ mode = tf.estimator.ModeKeys.TRAIN if train else tf.estimator.ModeKeys.PREDICT
 example = gqn_input_fn(
     dataset=dataset,
     context_size=20,
-    batch_size=36,
-    custom_frame_size=64,
+    batch_size=10,
+    custom_frame_size=32,
     root=data_dir,
     mode=mode
 )

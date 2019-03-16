@@ -15,6 +15,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import numpy as np
 
 from .gqn_params import GQNConfig
 from .gqn_encoder import tower_encoder, pool_encoder
@@ -77,6 +78,61 @@ def _encode_context(encoder_fn, context_poses, context_frames, model_params):
 
   return enc_r, endpoints
 
+def patch_image(frames: tf.Tensor, poses: tf.Tensor):
+    patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
+    patches = tf.reshape(patches, [-1,8,8,3])
+
+
+    # embedding pos to patch
+    net = tf.layers.conv2d(patches, filters=32, kernel_size=1, strides=1,
+                          padding="SAME", activation=tf.nn.relu)
+
+    skip1 = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
+                            padding="SAME", activation=None)
+    net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1,
+                          padding="SAME", activation=tf.nn.relu)
+
+    # TODO(ogroth): correct implementation for the skip connection?
+    net = net + skip1
+    net = tf.layers.conv2d(net, filters=64, kernel_size=2, strides=1, padding="SAME", activation=tf.nn.relu)
+    # patches now 1280(36) x 8 x 8 x 64
+
+    # tile the poses to match the embedding shape
+    poses = tf.reshape(poses, [-1,1,1,7]) # 20(36) x 1 x 1 x 7
+    # print(poses.get_shape())
+    poses = tf.tile(poses, [64,8,8,1]) # 1280(36) x 8 x 8 x 7
+
+    temp = []
+    for i in range(8):
+        tt=[]
+        for j in range(8):
+            tt.append([i,j])
+        temp.append(tt)
+    empty=[]
+    empty.append(temp)
+    empty = np.array(empty)# 1 8 8 2
+    new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
+    # new_poses = tf.reshape(-1,8,8,2)
+
+    patch_poses=tf.tile(new_poses,[12800,1,1,1]) #1280(36) x 8 x 8 x 2
+    total_poses = tf.concat([poses, patch_poses], axis=3) #1280(36) x 8 x 8 x 9
+    # print(">>>>>>>>>>>>>>>>",total_poses.get_shape()) #1280(36)x8x8x9
+
+    # concatenate the poses with the embedding
+    net = tf.concat([net, total_poses], axis=3) # 1280 x 8 x 8 x 11
+
+    skip2 = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
+                            padding="SAME", activation=None)
+    net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1,
+                          padding="SAME", activation=tf.nn.relu)
+    net = net + skip2
+    net = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
+                          padding="SAME", activation=tf.nn.relu)
+    net = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
+                          padding="SAME", activation=tf.nn.relu)
+
+    return net
+
 
 def gqn_draw(
     query_pose: tf.Tensor, target_frame: tf.Tensor,
@@ -124,19 +180,24 @@ def gqn_draw(
     # print(context_poses_packed.get_shape()) ? 7
     # print(enc_r_broadcast.get_shape()) ? 8 8 64
     # 1280(36) x 8 x 8 x 64
+
+    patch_dic=patch_image(context_frames_packed, context_poses_packed)
+
     if is_training:
       mu_target, endpoints_rnn = inference_rnn(
-          context_frames=context_frames_packed,
-          context_poses=context_poses_packed,
-          encoder_packed=enc_r_broadcast,
-          # representations=enc_r_broadcast,
-          query_poses=query_pose,
-          target_frames=target_frame,
-          sequence_size=_SEQ_LENGTH,
+        patch_dic=patch_dic,
+        context_frames=context_frames_packed,
+        context_poses=context_poses_packed,
+        encoder_packed=enc_r_broadcast,
+        query_poses=query_pose,
+        target_frames=target_frame,
+        sequence_size=_SEQ_LENGTH,
       )
     else:
       mu_target, endpoints_rnn = generator_rnn(
-          representations=enc_r_broadcast,
+          patch_dic=patch_dic,
+          encoder_packed=enc_r_broadcast,
+          # representations=enc_r_broadcast,
           query_poses=query_pose,
           sequence_size=_SEQ_LENGTH
       )

@@ -19,7 +19,7 @@ from data_provider.gqn_tfr_provider import DataReader
 ROOT_PATH = '/home/cylee/gqn/gqn-dataset'
 DATASET_NAME = 'rooms_ring_camera'
 CTX_SIZE = 5 # number of context (image, pose) pairs for a given query pose
-BATCH_SIZE = 36
+BATCH_SIZE = 10
 
 # graph definition
 data_reader = DataReader(dataset=DATASET_NAME, context_size=CTX_SIZE,mode='test',  root=ROOT_PATH)
