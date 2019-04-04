@@ -26,14 +26,12 @@ def patch_encoder(frames: tf.Tensor, poses: tf.Tensor, scope="PatchEncoder"):
     net = tf.layers.conv2d(net, filters=32, kernel_size=3, strides=1,
                            padding="SAME", activation=tf.nn.relu)
 
-    # TODO(ogroth): correct implementation for the skip connection?
     net = net + skip1
     net = tf.layers.conv2d(net, filters=64, kernel_size=2, strides=2, padding="VALID", activation=tf.nn.relu)
     skip2 = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
                              padding="SAME", activation=None)
     net = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
                            padding="SAME", activation=tf.nn.relu)
-    # TODO(ogroth): correct implementation for the skip connection?
     net = net + skip2
 
     net = tf.layers.conv2d(net, filters=32, kernel_size=1, strides=1,
@@ -50,23 +48,19 @@ def patcher(patch_dic: tf.Tensor,keys:tf.Tensor, state:tf.Tensor, scope="Patcher
   state key will be computed here
   """
   _BATCH_SIZE = GQN_DEFAULT_CONFIG.BATCH_SIZE
+  _IMG_NUM = GQN_DEFAULT_CONFIG.CONTEXT_SIZE * 64
   # keys = f(state)
 
   state_keys = tf.layers.conv2d(state, filters=64, kernel_size=1, strides=1,padding="VALID", activation=tf.nn.relu)
   state_keys = tf.reshape(state_keys, [_BATCH_SIZE, -1, 64]) # 36 x 64 x 64
-  state_keys = tf.tile(state_keys, [1280,1,1]) #1280(36) x 64 x 64
+  state_keys = tf.tile(state_keys, [_IMG_NUM,1,1]) #1280(36) x 64 x 64
 
-  keys =tf.tile(keys, [1280,1,1,1])
+  keys =tf.tile(keys, [_IMG_NUM,1,1,1])
   packed_keys = tf.reshape(keys, [-1,64,64])
-    # patch image
-  # print(">>>>>>>>>>>>>>>>>",net.get_shape())
-  # patched_keys=tf.reshape(state_keys, shape=[-1,1,1,64])
-  # tiled_keys=tf.tile(patched_keys, [1,8,8,1]) #1280x8x8x64
-    #TODO need to add attention dot product score
-  # print(">>>>>>>>>>>>>>>>>",state_keys.get_shape())
+
   patch_key_combine = tf.matmul(state_keys, packed_keys, transpose_b=True)
   patch_key_combine = tf.reshape(patch_key_combine, [-1,8,8,64])
-  # print(">>>>>>>>>>>>>>>>>",patch_key_combine.get_shape())
+
   attention_softmax = tf.nn.softmax(patch_key_combine,axis=0)
   # print(">>>>>>>>>>>>>>>>>",attention_softmax.get_shape())
 

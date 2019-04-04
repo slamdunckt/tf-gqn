@@ -80,7 +80,10 @@ def _encode_context(encoder_fn, context_poses, context_frames, model_params):
 
 def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     batch_size=GQN_DEFAULT_CONFIG.BATCH_SIZE
-    patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
+    img_h = GQN_DEFAULT_CONFIG.IMG_HEIGHT
+    img_w = GQN_DEFAULT_CONFIG.IMG_WIDTH
+    frames = tf.reshape(frames, [batch_size, -1,img_h,img_w,3])
+    patches=tf.extract_image_patches(images=frames, ksizes=[1,1,8,8,1], strides=[1,1,4,4,1],rates=[1,1,1,1,1], padding="SAME")
     patches = tf.reshape(patches, [-1,8,8,3])
 
 
@@ -93,9 +96,8 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1,
                           padding="SAME", activation=tf.nn.relu)
 
-    # TODO(ogroth): correct implementation for the skip connection?
     net = net + skip1
-    net = tf.layers.conv2d(net, filters=64, kernel_size=2, strides=1, padding="SAME", activation=tf.nn.relu)
+    net = tf.layers.conv2d(net, filters=32, kernel_size=2, strides=1, padding="SAME", activation=tf.nn.relu)
     # patches now 1280(10) x 8 x 8 x 64
 
     # tile the poses to match the embedding shape
