@@ -86,6 +86,19 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
     patches = tf.reshape(patches, [-1,8,8,3])
 
+    temp = []
+    for i in range(8):
+        tt=[]
+        for j in range(8):
+            tt.append([i+1,j+1])
+        temp.append(tt)
+    empty=[]
+    empty.append(temp)
+    empty = np.array(empty)# 1 8 8 2
+    new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
+    # new_poses = tf.reshape(-1,8,8,2)
+    new_poses=tf.tile(new_poses,[1280*batch_size,1,1,1])
+    patches = tf.concat([patches, new_poses],axis=3)
 
     # embedding pos to patch
     net = tf.layers.conv2d(patches, filters=32, kernel_size=1, strides=1,
@@ -105,27 +118,9 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     # print(poses.get_shape())
     poses = tf.tile(poses, [1,64,8,8,1]) # 1280(10) x 8 x 8 x 7
     poses = tf.reshape(poses, [-1,8,8,7]) # 1280(10) x8 x 8 x 7
-    '''
-    temp = []
-    for i in range(8):
-        tt=[]
-        for j in range(8):
-            tt.append([i,j])
-        temp.append(tt)
-    empty=[]
-    empty.append(temp)
-    empty = np.array(empty)# 1 8 8 2
-    new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
-    # new_poses = tf.reshape(-1,8,8,2)
 
-    patch_poses=tf.tile(new_poses,[1280*batch_size,1,1,1])
-    total_poses = tf.concat([poses, patch_poses], axis=3)
-
-    '''
-
-    total_poses = poses
     # concatenate the poses with the embedding
-    net = tf.concat([net, total_poses], axis=3) # 1280 x 8 x 8 x 11
+    net = tf.concat([net, poses], axis=3) # 1280 x 8 x 8 x 11
 
     skip2 = tf.layers.conv2d(net, filters=64, kernel_size=1, strides=1,
                             padding="SAME", activation=None)
