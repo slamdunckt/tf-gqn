@@ -82,8 +82,8 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     batch_size=GQN_DEFAULT_CONFIG.BATCH_SIZE
     img_h = GQN_DEFAULT_CONFIG.IMG_HEIGHT
     img_w = GQN_DEFAULT_CONFIG.IMG_WIDTH
-    frames = tf.reshape(frames, [batch_size, -1,img_h,img_w,3])
-    patches=tf.extract_image_patches(images=frames, ksizes=[1,1,8,8,1], strides=[1,1,4,4,1],rates=[1,1,1,1,1], padding="SAME")
+    # frames = tf.reshape(frames, [batch_size,img_h,img_w,3])
+    patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
     patches = tf.reshape(patches, [-1,8,8,3])
 
 
@@ -105,7 +105,7 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     # print(poses.get_shape())
     poses = tf.tile(poses, [1,64,8,8,1]) # 1280(10) x 8 x 8 x 7
     poses = tf.reshape(poses, [-1,8,8,7]) # 1280(10) x8 x 8 x 7
-
+    '''
     temp = []
     for i in range(8):
         tt=[]
@@ -118,10 +118,12 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
     # new_poses = tf.reshape(-1,8,8,2)
 
-    patch_poses=tf.tile(new_poses,[1280*batch_size,1,1,1]) #1280(36) x 8 x 8 x 2
-    total_poses = tf.concat([poses, patch_poses], axis=3) #1280(36) x 8 x 8 x 9
-    # print(">>>>>>>>>>>>>>>>",total_poses.get_shape()) #1280(36)x8x8x9
+    patch_poses=tf.tile(new_poses,[1280*batch_size,1,1,1])
+    total_poses = tf.concat([poses, patch_poses], axis=3)
 
+    '''
+
+    total_poses = poses
     # concatenate the poses with the embedding
     net = tf.concat([net, total_poses], axis=3) # 1280 x 8 x 8 x 11
 
