@@ -82,23 +82,31 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     batch_size=GQN_DEFAULT_CONFIG.BATCH_SIZE
     img_h = GQN_DEFAULT_CONFIG.IMG_HEIGHT
     img_w = GQN_DEFAULT_CONFIG.IMG_WIDTH
-    # frames = tf.reshape(frames, [batch_size,img_h,img_w,3])
-    patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
-    patches = tf.reshape(patches, [-1,8,8,3])
 
-    temp = []
-    for i in range(8):
-        tt=[]
-        for j in range(8):
-            tt.append([i+1,j+1])
-        temp.append(tt)
-    empty=[]
-    empty.append(temp)
     empty = np.array(empty)# 1 8 8 2
     new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
-    # new_poses = tf.reshape(-1,8,8,2)
-    new_poses=tf.tile(new_poses,[1280*batch_size,1,1,1])
-    patches = tf.concat([patches, new_poses],axis=3)
+    # frames = tf.reshape(frames, [batch_size,img_h,img_w,3])
+    patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
+    # 64 x 20 x batchsize
+    patches = tf.reshape(patches, [-1,64,8,8,3])
+
+    temp = []
+    for i in range(64):
+        ttt=[]
+        for j in range(8):
+            tt=[]
+            for k in range(8):
+                t = [i//8+1, i%8+1]
+                tt.append(t)
+            ttt.append(tt)
+        temp.append(ttt)
+
+    empty=[]
+    empty.append(temp)
+    empty = np.array(empty)
+    new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
+    patches = tf.concat([patches, new_poses],axis=4)
+    patches = tf.reshape(patches, [-1,8,8,5])
 
     # embedding pos to patch
     net = tf.layers.conv2d(patches, filters=32, kernel_size=1, strides=1,
