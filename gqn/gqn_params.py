@@ -28,14 +28,14 @@ GQN_DEFAULT_PARAM_DICT = {
     # hyper-parameters: generator LSTM
     'LSTM_OUTPUT_CHANNELS' : 64,
     'LSTM_CANVAS_CHANNELS' : 64,
-    'LSTM_KERNEL_SIZE' : 5,
-    'Z_CHANNELS' : 64,  # latent space size per image generation step
+    'LSTM_KERNEL_SIZE' : 3,
+    'Z_CHANNELS' : 16,  # latent space size per image generation step
     #TODO need to change INPUT channel of LSTM 64 64 7 128
-    'GENERATOR_INPUT_CHANNELS' : 135,  # pose + representation + z
+    'GENERATOR_INPUT_CHANNELS' : 87,  # pose + representation + z
     'INFERENCE_INPUT_CHANNELS' : 71,  # pose + representation
     'SEQ_LENGTH' : 8,  # number image generation steps, orig.: 12
     # hyper-parameters: eta functions
-    'ETA_INTERNAL_KERNEL_SIZE' : 5,  # internal projection of states to means and variances
+    'ETA_INTERNAL_KERNEL_SIZE' : 3,  # internal projection of states to means and variances
     'ETA_EXTERNAL_KERNEL_SIZE' : 1,  # kernel size for final projection of canvas to mean image
     # hyper-parameters: ADAM optimization
     'ANNEAL_SIGMA_TAU' : 200000,  # annealing interval for global noise
