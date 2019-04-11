@@ -12,8 +12,8 @@ data_dir = '/media/cylee/StorageDisk/gqn-dataset/'
 # dataset = 'minecraft'
 dataset = 'mazes'
 # model_dir = '/home/cylee/gqn/models/tf-gqn/minecraft/'
-model_dir = '/home/cylee/gqn/models/tf-gqn/maze_attention_fix/'
-result_dir = './results/maze_attention_fix/'
+model_dir = '/home/cylee/gqn/models/tf-gqn/maze_attention_final/'
+result_dir = './results/maze_attention_final/'
 train = 0
 
 import sys

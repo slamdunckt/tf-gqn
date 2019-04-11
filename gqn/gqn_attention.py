@@ -82,9 +82,9 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     batch_size=GQN_DEFAULT_CONFIG.BATCH_SIZE
     img_h = GQN_DEFAULT_CONFIG.IMG_HEIGHT
     img_w = GQN_DEFAULT_CONFIG.IMG_WIDTH
+    context_size = GQN_DEFAULT_CONFIG.CONTEXT_SIZE
 
-    empty = np.array(empty)# 1 8 8 2
-    new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
+
     # frames = tf.reshape(frames, [batch_size,img_h,img_w,3])
     patches=tf.extract_image_patches(images=frames, ksizes=[1,8,8,1], strides=[1,4,4,1],rates=[1,1,1,1], padding="SAME")
     # 64 x 20 x batchsize
@@ -104,7 +104,10 @@ def patch_image(frames: tf.Tensor, poses: tf.Tensor):
     empty=[]
     empty.append(temp)
     empty = np.array(empty)
+
     new_poses = tf.convert_to_tensor(empty, dtype=tf.float32)
+    new_poses = tf.tile(new_poses, [batch_size*context_size,1,1,1,1])
+
     patches = tf.concat([patches, new_poses],axis=4)
     patches = tf.reshape(patches, [-1,8,8,5])
 
