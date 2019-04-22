@@ -17,7 +17,7 @@ GQN_DEFAULT_PARAM_DICT = {
     'IMG_CHANNELS' : 3,
     'POSE_CHANNELS' : 7,
     # input parameters
-    'BATCH_SIZE' : 36,
+    'BATCH_SIZE' : 25,
     'CONTEXT_SIZE' : 20,
     'PATCH_SIZE' : 1280,
     # hyper-parameters: scene representation
