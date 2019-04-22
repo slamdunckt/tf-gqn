@@ -12,8 +12,8 @@ data_dir = '/media/cylee/StorageDisk/gqn-dataset/'
 # dataset = 'minecraft'
 dataset = 'mazes'
 # model_dir = '/home/cylee/gqn/models/tf-gqn/minecraft/'
-model_dir = '/home/cylee/gqn/models/tf-gqn/maze_attention_final/'
-result_dir = './results/maze_attention_final/'
+model_dir = '/home/cylee/gqn/models/tf-gqn/maze_25/'
+result_dir = './results/maze_25/'
 train = 0
 
 import sys
@@ -27,7 +27,7 @@ mode = tf.estimator.ModeKeys.TRAIN if train else tf.estimator.ModeKeys.PREDICT
 example = gqn_input_fn(
     dataset=dataset,
     context_size=20,
-    batch_size=13,
+    batch_size=25,
     custom_frame_size=32,
     root=data_dir,
     mode=mode
